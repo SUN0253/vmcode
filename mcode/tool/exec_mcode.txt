@@ -1,4 +1,5 @@
-e:\sjk\vmcode\vmcode\mcode\asm\test.asm 1 0x0 0x0000abcdabcdabcd clear spr.byte[0] 4;
-e:\sjk\vmcode\vmcode\mcode\asm\test.asm 2 0xa 0x0000 nop;
-e:\sjk\vmcode\vmcode\mcode\asm\test.asm 3 0xd 0x0000abcd mov spr[1] spr[2] 4;
-e:\sjk\vmcode\vmcode\mcode\asm\test.asm 4 0x110 0x0000abcd clear spr.byte[0] 4;
+e:\sjk\vmcode\vmcode\mcode\asm\test.asm, 1, 0x0, 0x0000abcdabcdabcd, clear spr.byte[0] 4;
+e:\sjk\vmcode\vmcode\mcode\asm\test.asm, 2, 0xa, 0x0000, nop;
+e:\sjk\vmcode\vmcode\mcode\asm\test.asm, 3, 0xd, 0x0000abcd, mov spr[1] spr[2] 4;
+e:\sjk\vmcode\vmcode\mcode\asm\test.asm, 4, 0x110, 0x0000abcd, clear spr.byte[0] 4;
+e:\sjk\vmcode\vmcode\mcode\asm\test.asm, 4, 0x120, 0x0000bcde, clear spr.byte[0] 5;

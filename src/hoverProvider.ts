@@ -15,21 +15,37 @@ class InstructionData {
 export default class HoverProvider implements vscode.HoverProvider {
     private data: Map<string, InstructionData> = new Map();
     private decorationType: vscode.TextEditorDecorationType;
+    private curExecMcodePath = "";
   
     constructor() {
       this.loadDataBasedOnActiveDocument();
   
       // 监听文档变化事件，以便在打开新的 ASM 文件时重新加载数据
       vscode.window.onDidChangeActiveTextEditor(editor => {
-        if (editor && this.isAsmFile(editor.document)) {
+        if (editor && this.isAsmFile(editor.document))
+        {
           this.loadDataBasedOnActiveDocument();
-         
         }
       });
 
       // 监听文本编辑器的鼠标移动事件
     vscode.window.onDidChangeTextEditorSelection(event => {
         this.updateDecorations();
+    });
+
+    // 监听文件变化
+    fs.watch(this.curExecMcodePath, (eventType, filename) => {
+      if (!filename) {
+         return;
+      }
+      
+      if (eventType === 'rename' && !fs.existsSync(this.curExecMcodePath)) {
+        // 删除文件清空data
+        this.data.clear();
+      } else if (eventType === 'change' || (eventType === 'rename' && fs.existsSync(this.curExecMcodePath))) {
+        // 添加或者修改则更新data
+        this.updateMcodeData(this.curExecMcodePath);
+      }
     });
 
       // 创建装饰器类型
@@ -51,7 +67,20 @@ export default class HoverProvider implements vscode.HoverProvider {
         }
       });
     }
-  
+    
+    private updateMcodeData(execMcodePath: string) {
+      // 读取并解析 exec_mcode.txt 文件
+      const lines = fs.readFileSync(execMcodePath, 'utf8').split('\n');
+      for (const line of lines)
+      {
+        const [fileName, lineNumber, pc, inpc, instruction] = line.trim().split(', ');
+        if (fileName && lineNumber)
+        {
+          const key = `${fileName}:${lineNumber}`;
+          this.data.set(key, new InstructionData(fileName, parseInt(lineNumber), pc, inpc, instruction));
+        }
+      }
+    }
     private async loadDataBasedOnActiveDocument() {
       const editor = vscode.window.activeTextEditor;
       if (!editor || !this.isAsmFile(editor.document)) {
@@ -60,19 +89,17 @@ export default class HoverProvider implements vscode.HoverProvider {
   
       const asmFilePath = editor.document.uri.fsPath;
       const execMcodePath = path.join(path.dirname(asmFilePath), '..', 'tool', 'exec_mcode.txt');
+      
+      if(!fs.existsSync(execMcodePath))
+      {
+          //console.warn(`exec_mcode.txt not found at path: ${execMcodePath}`);
+          return;
+      }
   
-      if (fs.existsSync(execMcodePath)) {
-        // 读取并解析 exec_mcode.txt 文件
-        const lines = fs.readFileSync(execMcodePath, 'utf8').split('\n');
-        for (const line of lines) {
-            const [fileName, lineNumber, pc, inpc, instruction] = line.trim().split(' ');
-            if (fileName && lineNumber) {
-              const key = `${fileName}:${lineNumber}`;
-              this.data.set(key, new InstructionData(fileName, parseInt(lineNumber), pc, inpc, instruction));
-            }
-          }
-      } else {
-        console.warn(`exec_mcode.txt not found at path: ${execMcodePath}`);
+      if(execMcodePath !== this.curExecMcodePath) 
+      {
+        this.updateMcodeData(execMcodePath);
+        this.curExecMcodePath = execMcodePath;
       }
     }
   
@@ -113,7 +140,7 @@ export default class HoverProvider implements vscode.HoverProvider {
     const document = editor.document;
     const fileName = document.fileName;
     const lineNumber = editor.selection.start.line;
-    const key = `${fileName}:${lineNumber}`;
+    const key = `${fileName}:${lineNumber + 1}`;
 
     // 清除之前的装饰器
     editor.setDecorations(this.decorationType, []);
@@ -123,6 +150,7 @@ export default class HoverProvider implements vscode.HoverProvider {
     }
     
     const range = new vscode.Range(lineNumber, document.lineAt(lineNumber).text.length, lineNumber, document.lineAt(lineNumber).text.length);
+    const pc = instructionData.pc;
     const annotationText = 'Line: ' + `${lineNumber + 1} ` + 'pc: ' + `${pc}`;
      
     const decorationOptions: vscode.DecorationOptions = {
