@@ -1,5 +1,5 @@
 # vmcode README
-https://github.com/SUN0253/vmcode
+This is a vscode plugin to help you read asm files.
 ## How To Use
 1. put you mcode.mid to mcode/tools
 2. run pro_mid.py

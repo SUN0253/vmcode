@@ -39,9 +39,9 @@ export default class HoverProvider implements vscode.HoverProvider {
          return;
       }
       
-      if (eventType === 'rename' && !fs.existsSync(this.curExecMcodePath)) {
-        // 删除文件清空data
-        this.data.clear();
+      if (eventType === 'rename' && !fs.existsSync(this.curExecMcodePath))
+      {
+        this.clearMcodeData();
       } else if (eventType === 'change' || (eventType === 'rename' && fs.existsSync(this.curExecMcodePath))) {
         // 添加或者修改则更新data
         this.updateMcodeData(this.curExecMcodePath);
@@ -74,13 +74,19 @@ export default class HoverProvider implements vscode.HoverProvider {
       for (const line of lines)
       {
         const [fileName, lineNumber, pc, inpc, instruction] = line.trim().split(', ');
-        if (fileName && lineNumber)
+        if (fileName.endsWith('.asm') && lineNumber)
         {
           const key = `${fileName}:${lineNumber}`;
           this.data.set(key, new InstructionData(fileName, parseInt(lineNumber), pc, inpc, instruction));
         }
       }
     }
+
+    private clearMcodeData() {
+      // 删除文件清空data
+      this.data.clear();
+    }
+
     private async loadDataBasedOnActiveDocument() {
       const editor = vscode.window.activeTextEditor;
       if (!editor || !this.isAsmFile(editor.document)) {
@@ -88,7 +94,7 @@ export default class HoverProvider implements vscode.HoverProvider {
       }
   
       const asmFilePath = editor.document.uri.fsPath;
-      const execMcodePath = path.join(path.dirname(asmFilePath), '..', 'tool', 'exec_mcode.txt');
+      const execMcodePath = path.join(path.dirname(asmFilePath), '../..', 'tool', 'exec_mcode.txt');
       
       if(!fs.existsSync(execMcodePath))
       {
@@ -98,6 +104,7 @@ export default class HoverProvider implements vscode.HoverProvider {
   
       if(execMcodePath !== this.curExecMcodePath) 
       {
+        this.clearMcodeData();
         this.updateMcodeData(execMcodePath);
         this.curExecMcodePath = execMcodePath;
       }
