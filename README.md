@@ -1,9 +1,16 @@
 # vmcode README
-This is a vscode plugin to help you read asm files.
-## How To Use
-1. put you mcode.mid to mcode/tools
-2. run pro_mid.py
-3. open .asm file
+本插件用于微码阅读辅助使用
+
+## 如何使用
+1. 运行mcode生成函数时，增加第四个参数vmcode，此时会自动将生成的mcode.bin文件拷贝到tool文件夹下并进行解析，指令实例如下
+   ./mkmcode.sh fpp_plus eth fast vmcode
+2. 打开微码.asm文件或者.h文件，在指令运行到的地方，右边会出现一段透明文字，将鼠标放上去则会显示信息
+3. 如果有使用gitlen插件，滑动鼠标下拉则会显示指针相关信息
+
+## 注意事项
+1. 当前支持的版本为1.87.2，云桌面更新到最新即可
+2. 刚打开时，如果为.h文件可能不生效，需要先打开任意asm文件，再回到.h文件即可
+3. 本插件基于mcode.mid文件生成指令，请确保代码和生成的微码文件相对应，做修改时需要重新生成解析文件
 
 
 **Enjoy!**

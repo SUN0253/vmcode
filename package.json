@@ -6,7 +6,7 @@
   "publisher": "ikun909",
   "icon": "image/vmcode.png",
   "engines": {
-    "vscode": "^1.97.0"
+    "vscode": "^1.87.2"
   },
   "categories": [
     "Other"
@@ -45,7 +45,7 @@
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
-    "@types/vscode": "^1.97.0",
+    "@types/vscode": "^1.87.2",
     "@typescript-eslint/eslint-plugin": "^8.22.0",
     "@typescript-eslint/parser": "^8.22.0",
     "@vscode/test-cli": "^0.0.10",

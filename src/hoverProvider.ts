@@ -4,7 +4,6 @@ import * as path from 'path';
 
 class InstructionData {
   constructor(
-    public fileName: string,
     public line: number,
     public pc: string,
     public inpc: string,
@@ -22,7 +21,7 @@ export default class HoverProvider implements vscode.HoverProvider {
   
       // 监听文档变化事件，以便在打开新的 ASM 文件时重新加载数据
       vscode.window.onDidChangeActiveTextEditor(editor => {
-        if (editor && this.isAsmFile(editor.document))
+        if (editor && this.isMcodeFile(editor.document))
         {
           this.loadDataBasedOnActiveDocument();
         }
@@ -53,7 +52,7 @@ export default class HoverProvider implements vscode.HoverProvider {
         // 设置装饰器的样式，这里我们设置它为透明文本
         light: {
             after: {
-                color: 'rgba(0, 0, 0, 0.5)', // 半透明黑色
+                color: 'rgba(0, 0, 0, 0.3)', // 半透明黑色
                 fontStyle: 'italic',
                 margin: '0 0 0 10px'
             }
@@ -73,11 +72,21 @@ export default class HoverProvider implements vscode.HoverProvider {
       const lines = fs.readFileSync(execMcodePath, 'utf8').split('\n');
       for (const line of lines)
       {
-        const [fileName, lineNumber, pc, inpc, instruction] = line.trim().split(', ');
-        if (fileName.endsWith('.asm') && lineNumber)
+        const [lineNumber, pc, inpc, instruction] = line.trim().split(', ');
+        if (lineNumber)
         {
-          const key = `${fileName}:${lineNumber}`;
-          this.data.set(key, new InstructionData(fileName, parseInt(lineNumber), pc, inpc, instruction));
+          const key = lineNumber;
+          if (!this.data.has(key)) 
+          {
+            // 如果Map中没有这个lineNumber，就创建一个新的InstructionData对象
+            this.data.set(key, new InstructionData(parseInt(lineNumber), pc, inpc, instruction));
+          } 
+          else
+          {
+            const existingData = this.data.get(key)!;
+            existingData.pc = existingData.pc + ', ' + pc;
+            existingData.inpc = existingData.inpc + ', ' + inpc;
+          }
         }
       }
     }
@@ -89,29 +98,35 @@ export default class HoverProvider implements vscode.HoverProvider {
 
     private async loadDataBasedOnActiveDocument() {
       const editor = vscode.window.activeTextEditor;
-      if (!editor || !this.isAsmFile(editor.document)) {
-        return; // 没有活动的编辑器或者不是 ASM 文件
+      this.clearMcodeData();
+      if (!editor || !this.isMcodeFile(editor.document)) 
+      {
+        return; // 没有活动的编辑器或者不是 mcode 文件
       }
   
       const asmFilePath = editor.document.uri.fsPath;
-      const execMcodePath = path.join(path.dirname(asmFilePath), '../..', 'tool', 'exec_mcode.txt');
+      const baseName = path.basename(editor.document.fileName).replace(/\./g, '_') + '.txt';
+      const execMcodePath = path.join(path.dirname(asmFilePath), '../..', 'tool/line_pc', baseName);
+      this.curExecMcodePath = execMcodePath;
       
       if(!fs.existsSync(execMcodePath))
       {
-          //console.warn(`exec_mcode.txt not found at path: ${execMcodePath}`);
-          return;
+        return;
       }
   
-      if(execMcodePath !== this.curExecMcodePath) 
-      {
-        this.clearMcodeData();
-        this.updateMcodeData(execMcodePath);
-        this.curExecMcodePath = execMcodePath;
-      }
+      this.updateMcodeData(execMcodePath);
     }
   
     private isAsmFile(document: vscode.TextDocument): boolean {
       return document.languageId === 'asm' && path.extname(document.fileName) === '.asm';
+    }
+
+    private isAsmHeaderFile(document: vscode.TextDocument): boolean {
+      return path.extname(document.fileName) === '.h' && document.fileName.includes('mcode');
+    }
+
+    private isMcodeFile(document: vscode.TextDocument): boolean {
+      return this.isAsmFile(document) || this.isAsmHeaderFile(document);
     }
 
     public provideHover(
@@ -119,9 +134,12 @@ export default class HoverProvider implements vscode.HoverProvider {
       position: vscode.Position,
       token: vscode.CancellationToken
     ): vscode.ProviderResult<vscode.Hover> {
-      const fileName = document.fileName;
+      if (!this.isMcodeFile(document)) 
+      {
+        return; // 没有活动的编辑器或者不是 mcode 文件
+      }
       const lineNumber = position.line + 1; // Convert to 1-based
-      const key = `${fileName}:${lineNumber}`;
+      const key = lineNumber.toString();
     
       const instructionData = this.data.get(key);
       if (!instructionData) {
@@ -129,11 +147,11 @@ export default class HoverProvider implements vscode.HoverProvider {
       }
     
       const hoverContent = new vscode.MarkdownString(`
-        \`\`\`
-        PC:     ${instructionData.pc}
-        INPC:   ${instructionData.inpc}
-        Instruction: ${instructionData.instruction}
-        \`\`\`
+       
+        PC:    ${instructionData.pc}
+        INPC:  ${instructionData.inpc}
+        INS:   ${instructionData.instruction}
+        
     ` );
 
     return new vscode.Hover(hoverContent);
@@ -145,9 +163,8 @@ export default class HoverProvider implements vscode.HoverProvider {
         return;
     }
     const document = editor.document;
-    const fileName = document.fileName;
     const lineNumber = editor.selection.start.line;
-    const key = `${fileName}:${lineNumber + 1}`;
+    const key = (lineNumber + 1).toString();
 
     // 清除之前的装饰器
     editor.setDecorations(this.decorationType, []);

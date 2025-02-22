@@ -30,6 +30,13 @@ export function activate(context: vscode.ExtensionContext) {
 	// 将 HoverProvider 的 Disposable 添加到上下文的 subscriptions 中
 	// 这样可以确保在扩展被禁用或卸载时，HoverProvider 也会被正确地处理
 	context.subscriptions.push(asmHoverProviderDisposable);
+
+	// 注册 HoverProvider 到 'h' 语言
+	const asmHoverProviderDisposable1 = vscode.languages.registerHoverProvider('cpp', hoverProvider);
+  
+	// 将 HoverProvider 的 Disposable 添加到上下文的 subscriptions 中
+	// 这样可以确保在扩展被禁用或卸载时，HoverProvider 也会被正确地处理
+	context.subscriptions.push(asmHoverProviderDisposable1);
   
 }
 
