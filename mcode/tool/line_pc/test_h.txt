@@ -1,0 +1,4 @@
+1, 0xccc, 0x0000abcdabcdabcd, clear spr.byte[0] 4;
+2, 0xddd, 0x0000, nop;
+3, 0xeee, 0x0000abcd, mov spr[1] spr[2] 4;
+4, 0xfff, 0x0000abcd, clear spr.byte[0] 4;
