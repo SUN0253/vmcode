@@ -2,7 +2,7 @@
   "name": "vmcode",
   "displayName": "vmcode",
   "description": "Show hover information for ASM files",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "publisher": "ikun909",
   "icon": "image/vmcode.png",
   "engines": {

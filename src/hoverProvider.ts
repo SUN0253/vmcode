@@ -21,10 +21,7 @@ export default class HoverProvider implements vscode.HoverProvider {
   
       // 监听文档变化事件，以便在打开新的 ASM 文件时重新加载数据
       vscode.window.onDidChangeActiveTextEditor(editor => {
-        if (editor && this.isMcodeFile(editor.document))
-        {
           this.loadDataBasedOnActiveDocument();
-        }
       });
 
       // 监听文本编辑器的鼠标移动事件
@@ -99,9 +96,15 @@ export default class HoverProvider implements vscode.HoverProvider {
     private async loadDataBasedOnActiveDocument() {
       const editor = vscode.window.activeTextEditor;
       this.clearMcodeData();
-      if (!editor || !this.isMcodeFile(editor.document)) 
+      if (!editor) 
       {
-        return; // 没有活动的编辑器或者不是 mcode 文件
+        return; // 没有活动的编辑器
+      }
+      
+      if (!this.isMcodeFile(editor.document)) 
+      {
+        editor.setDecorations(this.decorationType, []);
+        return; // 不是 mcode 文件
       }
   
       const asmFilePath = editor.document.uri.fsPath;
@@ -122,7 +125,7 @@ export default class HoverProvider implements vscode.HoverProvider {
     }
 
     private isAsmHeaderFile(document: vscode.TextDocument): boolean {
-      return path.extname(document.fileName) === '.h' && document.fileName.includes('mcode');
+      return path.extname(document.fileName) === '.h' && document.fileName.includes('\\mcode\\');
     }
 
     private isMcodeFile(document: vscode.TextDocument): boolean {
